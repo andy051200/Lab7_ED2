@@ -1,112 +1,197 @@
-/*
-  SD card test
+/*------------------------------------------------------------------------------  
+Archivo: Main_Lab7
+Microcontrolador: TM4C123
+Autor: Andy Bonilla
+Compilador: Energia 1.8.11E23
+Programa: laboratorio 7
+Hardware: Launchpad Tiva C
+    
+Creado: 27 de septiembre de 2021    
+Descripcion: un pequeño menu para leer imagenes en textos desde una sd
+------------------------------------------------------------------------------*/
 
- This example shows how use the utility libraries on which the'
- SD library is based in order to get info about your SD card.
- Very useful for testing a card when you're not sure whether its working or not.
-
- The circuit:
-  * SD card attached to SPI bus as follows:
- ** MOSI - pin 11 on Arduino Uno/Duemilanove/Diecimila
- ** MISO - pin 12 on Arduino Uno/Duemilanove/Diecimila
- ** CLK - pin 13 on Arduino Uno/Duemilanove/Diecimila
- ** CS - depends on your SD card shield or module.
-     Pin 4 used here for consistency with other Arduino examples
-
-
- created  28 Mar 2011
- by Limor Fried
- modified 9 Apr 2012
- by Tom Igoe
- */
-// include the SD library:
+/*-----------------------------------------------------------------------------
+ ----------------------------L I B R E R I A S---------------------------------
+ -----------------------------------------------------------------------------*/
 #include <SPI.h>
 #include <SD.h>
 
-// set up variables using the SD utility library functions:
-Sd2Card card;
-SdVolume volume;
-SdFile root;
+/*-----------------------------------------------------------------------------
+ -----------------V A R I A B L E S   A   I M P L E M T E N T A R--------------
+ -----------------------------------------------------------------------------*/
+//-------VARIABLES DE PROGRAMA
+int menu;
+File myFile;
 
-const int chipSelect = PA_3; //cs PIN pero en la tiva
-
+/*-----------------------------------------------------------------------------
+ ------------ P R O T O T I P O S   D E   F U N C I O N E S -------------------
+ -----------------------------------------------------------------------------*/
+void printDirectory(File dir, int numTabs); //informacion de directorio
+void opcion1(void);                         //funcion para desplegar opcion 1
+void opcion2(void);                         //funcion para desplegar opcion 2
+void opcion3(void);                         //funcion para desplegar opcion 3
+/*-----------------------------------------------------------------------------
+ --------------------- I N T E R R U P C I O N E S ----------------------------
+ -----------------------------------------------------------------------------*/
+//de momento no hay interrupciones
+/*-----------------------------------------------------------------------------
+ ------------------------------ S E T   U P -----------------------------------
+ -----------------------------------------------------------------------------*/
 void setup()
 {
-  // Open serial communications and wait for port to open:
-  Serial.begin(9600);
+  //-------ENTRADAS Y SALIDA
+  pinMode(PA_3, OUTPUT);    //se define salida del CS para comunicacion con SD
+
+  //-------INICIALIZACION DE PROTOCOLOS DE COMUNICACION
+  Serial.begin(9600);       //UART para menu
+  SPI.setModule(0);         //SPI para SD
+
+  //-------MENSAJES DE INICIALIZACION DE COMUNICACION CON SD
+  Serial.print("Inicializando tarjeta SD...");
  
-  SPI.setModule(0);
-
-  Serial.print("\nInitializing SD card...");
-  // On the Ethernet Shield, CS is pin 4. It's set as an output by default.
-  // Note that even if it's not used as the CS pin, the hardware SS pin
-  // (10 on most Arduino boards, 53 on the Mega) must be left as an output
-  // or the SD library functions will not work.
-  pinMode(PA_3, OUTPUT);     // change this to 53 on a mega
-
-
-  // we'll use the initialization code from the utility libraries
-  // since we're just testing if the card is working!
-  if (!card.init(SPI_HALF_SPEED, chipSelect)) {
-    Serial.println("initialization failed. Things to check:");
-    Serial.println("* is a card is inserted?");
-    Serial.println("* Is your wiring correct?");
-    Serial.println("* did you change the chipSelect pin to match your shield or module?");
-    return;
-  } else {
-    Serial.println("Wiring is correct and a card is present.");
-  }
-
-  // print the type of card
-  Serial.print("\nCard type: ");
-  switch (card.type()) {
-    case SD_CARD_TYPE_SD1:
-      Serial.println("SD1");
-      break;
-    case SD_CARD_TYPE_SD2:
-      Serial.println("SD2");
-      break;
-    case SD_CARD_TYPE_SDHC:
-      Serial.println("SDHC");
-      break;
-    default:
-      Serial.println("Unknown");
-  }
-
-  // Now we will try to open the 'volume'/'partition' - it should be FAT16 or FAT32
-  if (!volume.init(card)) {
-    Serial.println("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
+  if (!SD.begin(PA_3)) {
+    Serial.println("initialización fallida!");  //mensaje si hay algun error
     return;
   }
+  Serial.println("initialización correcta.");   //mensaje si todo esta bien
 
+  myFile = SD.open("/");                        //se abre el directorio de la SD
+  printDirectory(myFile, 0);                    //se imprime el directorio de la SD
 
-  // print the type and size of the first FAT-type volume
-  uint32_t volumesize;
-  Serial.print("\nVolume type is FAT");
-  Serial.println(volume.fatType(), DEC);
-  Serial.println();
+  //-------MENSAJES DE MENU AL INICIAR PROGRAMA
+  Serial.println("done!");
+  Serial.println("Escoger imagen 1, 2 o 3 ");
+  Serial.println("1. antena.txt ");
+  Serial.println("2. ramon.txt ");
+  Serial.println("3. flophy.txt ");
+}
+/*-----------------------------------------------------------------------------
+ -------------------------- M A I N   L O O P ---------------------------------
+ -----------------------------------------------------------------------------*/
+void loop()
+{
+  //-------SE LLAMAN FUNCIONES PARA NO SATURAR CON PROGRA EL LOOP
+  menu = Serial.read();   //se toma como lectura serial
+  opcion1();              //funcion para desplegar opciones de foto 1
+  opcion2();              //funcion para desplegar opciones de foto 2
+  opcion3();              //funcion para desplegar opciones de foto 3
+ 
+}
+/*-----------------------------------------------------------------------------
+ ------------------------- F U N C I O N E S ----------------------------------
+ -----------------------------------------------------------------------------*/
+//-------FUNCION PARA MOSTRAR INFORMACION DE DIRECTORIO
+void printDirectory(File dir, int numTabs) {
+  while (true) {
 
-  volumesize = volume.blocksPerCluster();    // clusters are collections of blocks
-  volumesize *= volume.clusterCount();       // we'll have a lot of clusters
-  volumesize *= 512;                            // SD card blocks are always 512 bytes
-  Serial.print("Volume size (bytes): ");
-  Serial.println(volumesize);
-  Serial.print("Volume size (Kbytes): ");
-  volumesize /= 1024;
-  Serial.println(volumesize);
-  Serial.print("Volume size (Mbytes): ");
-  volumesize /= 1024;
-  Serial.println(volumesize);
+    File entry =  dir.openNextFile();
+    if (! entry) {
+      // no more files
+      break;
+    }
+    for (uint8_t i = 0; i < numTabs; i++) {
+      Serial.print('\t');
+    }
+    Serial.print(entry.name());
+    if (entry.isDirectory()) {
+      Serial.println(" ");
 
-
-  Serial.println("\nFiles found on the card (name, date and size in bytes): ");
-  root.openRoot(volume);
-
-  // list all files in the card with date and size
-  root.ls(LS_R | LS_DATE | LS_SIZE);
+    } else {
+      // files have sizes, directories do not
+      Serial.print("\t\t");
+      Serial.println(entry.size());
+    }
+    entry.close();
+  }
+}
+//-------FUNCION PARA DESPLEGAR LA PRIMER IMAGEN
+void opcion1(void){
+  if (menu == 49) {                   //lectura de foto1
+    myFile = SD.open("antena.txt");   //se abre archivo de foto1
+    if (myFile) {
+      Serial.println("antena.txt:");  //se imprimer en monitor serial
+      //leer linea por linea del archivo txt
+      while (myFile.available()) {
+        Serial.write(myFile.read());
+      }
+      //se cierra cuando termina de leer
+      myFile.close();
+    } 
+    else {
+      //otra vez el menu si hay un error
+      Serial.println("Hubo un error, intento nuevamente");
+      Serial.println("Escoger imagen 1, 2 o 3 ");
+      Serial.println("1. antena.txt ");
+      Serial.println("2. ramon.txt ");
+      Serial.println("3. flophy.txt ");
+    }
+    Serial.println("Escoger imagen 1, 2 o 3 ");
+    Serial.println("1. antena.txt ");
+    Serial.println("2. ramon.txt ");
+    Serial.println("3. flophy.txt ");
+  }
 }
 
+//-------FUNCION PARA DESPLEGAR LA SEGUNDA IMAGEN
+void opcion2(void){
+  if (menu == 50) {
+  
+    myFile = SD.open("ramon.txt");
+    if (myFile) {
+      Serial.println("ramon.txt:");
 
-void loop(void) {
+      // read from the file until there's nothing else in it:
+      while (myFile.available()) {
+        Serial.write(myFile.read());
 
+      }
+      // close the file:
+      myFile.close();
+    } else {
+      // if the file didn't open, print an error:
+      Serial.println("Escoger imagen 1, 2 o 3 ");
+      Serial.println("1. antena.txt ");
+      Serial.println("2. ramon.txt ");
+      Serial.println("3. flophy.txt ");
+
+
+    }
+    Serial.println("Escoger imagen 1, 2 o 3 ");
+    Serial.println("1. antena.txt ");
+    Serial.println("2. ramon.txt ");
+    Serial.println("3. flophy.txt ");
+
+  }
+}
+
+//-------FUNCION PARA DESPLEGAR LA TERCER IMAGEN
+void opcion3(void){
+  if (menu == 51) {
+    // re-open the file for reading:
+    myFile = SD.open("flophy.txt");
+    if (myFile) {
+      Serial.println("flophy.txt:");
+
+      // read from the file until there's nothing else in it:
+      while (myFile.available()) {
+        Serial.write(myFile.read());
+
+      }
+      // close the file:
+      myFile.close();
+    } else {
+      // if the file didn't open, print an error:
+      Serial.println("Escoger imagen 1, 2 o 3 ");
+      Serial.println("1. antena.txt ");
+      Serial.println("2. ramon.txt ");
+      Serial.println("3. flophy.txt ");
+
+
+    }
+    Serial.println("Escoger imagen 1, 2 o 3 ");
+    Serial.println("1. antena.txt ");
+    Serial.println("2. ramon.txt ");
+    Serial.println("3. flophy.txt ");
+
+  }
 }
