@@ -104,6 +104,7 @@ void printDirectory(File dir, int numTabs) {
     entry.close();
   }
 }
+
 //-------FUNCION PARA DESPLEGAR LA PRIMER IMAGEN
 void opcion1(void){
   if (menu == 49) {                   //lectura de foto1
@@ -134,64 +135,56 @@ void opcion1(void){
 
 //-------FUNCION PARA DESPLEGAR LA SEGUNDA IMAGEN
 void opcion2(void){
-  if (menu == 50) {
-  
-    myFile = SD.open("ramon.txt");
+  if (menu == 50) {                 //lectura de foto2
+    myFile = SD.open("ramon.txt");  //se abre archivp
     if (myFile) {
       Serial.println("ramon.txt:");
-
-      // read from the file until there's nothing else in it:
+      //leer linea por linea del archivo txt
       while (myFile.available()) {
         Serial.write(myFile.read());
-
       }
-      // close the file:
+      //se cierra cuando termina de leer
       myFile.close();
-    } else {
-      // if the file didn't open, print an error:
+    } 
+    else {
+      //otra vez el menu si hay un error
+      Serial.println("Hubo un error, intento nuevamente");
       Serial.println("Escoger imagen 1, 2 o 3 ");
       Serial.println("1. antena.txt ");
       Serial.println("2. ramon.txt ");
       Serial.println("3. flophy.txt ");
-
-
     }
     Serial.println("Escoger imagen 1, 2 o 3 ");
     Serial.println("1. antena.txt ");
     Serial.println("2. ramon.txt ");
     Serial.println("3. flophy.txt ");
-
   }
 }
 
 //-------FUNCION PARA DESPLEGAR LA TERCER IMAGEN
 void opcion3(void){
-  if (menu == 51) {
-    // re-open the file for reading:
-    myFile = SD.open("flophy.txt");
+  if (menu == 51) {                   //lectura de foto3
+    myFile = SD.open("flophy.txt");   //se abre archivo de foto3
     if (myFile) {
-      Serial.println("flophy.txt:");
-
-      // read from the file until there's nothing else in it:
+      Serial.println("flophy.txt:");  //se imprime en monitor serial
+      //leer linea por linea del archivo txt
       while (myFile.available()) {
         Serial.write(myFile.read());
-
       }
-      // close the file:
+      //se cierra cuando termina de leer
       myFile.close();
-    } else {
-      // if the file didn't open, print an error:
+    } 
+    else {
+      //otra vez el menu si hay un error
+      Serial.println("Hubo un error, intento nuevamente");
       Serial.println("Escoger imagen 1, 2 o 3 ");
       Serial.println("1. antena.txt ");
       Serial.println("2. ramon.txt ");
       Serial.println("3. flophy.txt ");
-
-
     }
     Serial.println("Escoger imagen 1, 2 o 3 ");
     Serial.println("1. antena.txt ");
     Serial.println("2. ramon.txt ");
     Serial.println("3. flophy.txt ");
-
   }
 }
